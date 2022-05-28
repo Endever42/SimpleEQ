@@ -261,54 +261,41 @@ void SimpleEQAudioProcessor::updatePeakFilter(const ChainSettings& chainSettings
 }
 
 template<typename ChainType, typename CoefficientType>
-void SimpleEQAudioProcessor::updateCutFilter(ChainType& leftLowCut,
-    const CoefficientType& cutCoefficients,
-    const Slope& lowCutSlope)
+void SimpleEQAudioProcessor::updateCutFilter(
+    ChainType& chain, const CoefficientType& coefficients, const Slope& slope)
 {
-    leftLowCut.setBypassed<0>(true);
-    leftLowCut.setBypassed<1>(true);
-    leftLowCut.setBypassed<2>(true);
-    leftLowCut.setBypassed<3>(true);
+    chain.setBypassed<0>(true);
+    chain.setBypassed<1>(true);
+    chain.setBypassed<2>(true);
+    chain.setBypassed<3>(true);
 
-    switch (lowCutSlope)
+    switch (slope)
     {
-        case Slope_12:
+        case Slope_48:
         {
-            *leftLowCut.get<0>().coefficients = *cutCoefficients[0];
-            leftLowCut.setBypassed<0>(false);
-            break;
-        }
-        case Slope_24:
-        {
-            *leftLowCut.get<0>().coefficients = *cutCoefficients[0];
-            leftLowCut.setBypassed<0>(false);
-            *leftLowCut.get<1>().coefficients = *cutCoefficients[1];
-            leftLowCut.setBypassed<1>(false);
-            break;
+            updateSingleCutFilter<3>(chain, coefficients);
         }
         case Slope_36:
         {
-            *leftLowCut.get<0>().coefficients = *cutCoefficients[0];
-            leftLowCut.setBypassed<0>(false);
-            *leftLowCut.get<1>().coefficients = *cutCoefficients[1];
-            leftLowCut.setBypassed<1>(false);
-            *leftLowCut.get<2>().coefficients = *cutCoefficients[2];
-            leftLowCut.setBypassed<2>(false);
-            break;
+            updateSingleCutFilter<2>(chain, coefficients);
         }
-        case Slope_48:
+        case Slope_24:
         {
-            *leftLowCut.get<0>().coefficients = *cutCoefficients[0];
-            leftLowCut.setBypassed<0>(false);
-            *leftLowCut.get<1>().coefficients = *cutCoefficients[1];
-            leftLowCut.setBypassed<1>(false);
-            *leftLowCut.get<2>().coefficients = *cutCoefficients[2];
-            leftLowCut.setBypassed<2>(false);
-            *leftLowCut.get<3>().coefficients = *cutCoefficients[3];
-            leftLowCut.setBypassed<3>(false);
-            break;
+            updateSingleCutFilter<1>(chain, coefficients);
+        }
+        case Slope_12:
+        {
+            updateSingleCutFilter<0>(chain, coefficients);
         }
     }
+}
+
+template<int Index, typename ChainType, typename CoefficientType>
+void SimpleEQAudioProcessor::updateSingleCutFilter(ChainType& chain, const CoefficientType& coefficients)
+{
+    updateCoefficients(chain.get<Index>().coefficients, coefficients[Index]);
+    // *leftLowCut.get<3>().coefficients = *cutCoefficients[3];
+    chain.setBypassed<Index>(false);
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout SimpleEQAudioProcessor::createParameterLayout()
